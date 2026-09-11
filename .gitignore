@@ -44,3 +44,6 @@ htmlcov/
 *.sqlite
 *.sqlite3
 data/
+
+*.db-shm
+*.db-wal
