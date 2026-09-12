@@ -162,6 +162,7 @@ class BookingAgent:
             slots_missing=slots_missing,
             is_complete=is_complete,
         )
+
     @staticmethod
     def _sanitize_slot_value(value: str, max_length: int = 200) -> str:
         """Sanitize a slot value to prevent prompt injection.
@@ -219,10 +220,11 @@ Extract any new slot values mentioned. Return null for slots not mentioned in th
     @staticmethod
     def _validate_slots(slots_filled: dict) -> list[str]:
         """Validate filled slots and remove invalid ones from the dictionary.
-        
+
         Returns a list of error messages for the user.
         """
         from datetime import datetime
+
         errors = []
 
         # Validate date
@@ -230,7 +232,9 @@ Extract any new slot values mentioned. Return null for slots not mentioned in th
             try:
                 datetime.fromisoformat(slots_filled["date"])
             except ValueError:
-                errors.append(f"I couldn't understand the date '{slots_filled['date']}'. Please use YYYY-MM-DD format.")
+                errors.append(
+                    f"I couldn't understand the date '{slots_filled['date']}'. Please use YYYY-MM-DD format."
+                )
                 del slots_filled["date"]
 
         # Validate passengers
@@ -245,10 +249,13 @@ Extract any new slot values mentioned. Return null for slots not mentioned in th
             except (ValueError, TypeError):
                 errors.append("Passenger count must be a number.")
                 del slots_filled["passengers"]
-                
+
         # Validate origin != destination
         if "origin" in slots_filled and "destination" in slots_filled:
-            if slots_filled["origin"].strip().lower() == slots_filled["destination"].strip().lower():
+            if (
+                slots_filled["origin"].strip().lower()
+                == slots_filled["destination"].strip().lower()
+            ):
                 errors.append("Origin and destination cannot be the same.")
                 del slots_filled["destination"]
 
@@ -266,7 +273,10 @@ Extract any new slot values mentioned. Return null for slots not mentioned in th
         try:
             validation_context = ""
             if invalid_messages:
-                validation_context = "\nValidation Errors (mention these nicely to the user):\n" + "\n".join(f"- {msg}" for msg in invalid_messages)
+                validation_context = (
+                    "\nValidation Errors (mention these nicely to the user):\n"
+                    + "\n".join(f"- {msg}" for msg in invalid_messages)
+                )
 
             if is_complete:
                 # Booking confirmation

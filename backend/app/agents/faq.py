@@ -115,7 +115,7 @@ class FAQAgent:
                 )
             else:
                 answer = str(content)
-                
+
             logger.info(f"FAQ agent answered: {answer[:100]}...")
 
         except Exception as e:
@@ -126,4 +126,6 @@ class FAQAgent:
             )
 
         # FAQ goals are always single-turn — complete immediately
-        return AgentResponse(response=answer, slots_filled={}, slots_missing=[], is_complete=True)
+        return AgentResponse(
+            response=answer, slots_filled={}, slots_missing=[], is_complete=True
+        )

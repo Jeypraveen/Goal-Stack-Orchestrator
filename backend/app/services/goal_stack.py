@@ -292,14 +292,18 @@ class GoalStackManager:
             (str(goal_id),),
         ) as cursor:
             row = await cursor.fetchone()
-            
+
         if row is None:
             raise ValueError(f"Goal {goal_id} not found")
-            
+
         # 2. Merge existing and new
         current_slots_filled_str = row["slots_filled"]
-        current_slots_filled = json.loads(current_slots_filled_str) if isinstance(current_slots_filled_str, str) else current_slots_filled_str
-        
+        current_slots_filled = (
+            json.loads(current_slots_filled_str)
+            if isinstance(current_slots_filled_str, str)
+            else current_slots_filled_str
+        )
+
         merged_slots_filled = dict(current_slots_filled)
         merged_slots_filled.update(slots_filled)
 

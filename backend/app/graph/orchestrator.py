@@ -235,16 +235,22 @@ async def execute_agent(state: OrchestratorState) -> dict:
             user_message=state["user_message"],
             goal=active_goal,
         )
-        
+
         # Enforce type safety
         if not isinstance(agent_response, AgentResponse):
-            raise TypeError(f"Agent {agent.__class__.__name__} did not return an AgentResponse object.")
-            
+            raise TypeError(
+                f"Agent {agent.__class__.__name__} did not return an AgentResponse object."
+            )
+
         combined_responses.append(agent_response.response)
 
         # Update goal slots
         if agent_response.slots_filled or agent_response.slots_missing:
-            await gsm.update_slots(active_goal.id, agent_response.slots_filled, agent_response.slots_missing)
+            await gsm.update_slots(
+                active_goal.id,
+                agent_response.slots_filled,
+                agent_response.slots_missing,
+            )
 
         # If the goal is complete, pop it (resumes the next paused goal)
         if agent_response.is_complete:

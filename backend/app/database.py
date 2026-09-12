@@ -29,7 +29,9 @@ async def init_db(database_url: str) -> aiosqlite.Connection:
     global _conn
 
     # Strip 'sqlite:///' if present to get the local file path
-    db_path = database_url.replace("sqlite:///", "") if database_url else "orchestrator.db"
+    db_path = (
+        database_url.replace("sqlite:///", "") if database_url else "orchestrator.db"
+    )
 
     logger.info(f"Connecting to SQLite database at {db_path}")
     _conn = await aiosqlite.connect(db_path)
@@ -117,6 +119,7 @@ def get_db() -> aiosqlite.Connection:
             "Ensure the app lifespan has started before accessing the database."
         )
     return _conn
+
 
 def get_session_lock(session_id: str) -> asyncio.Lock:
     """
