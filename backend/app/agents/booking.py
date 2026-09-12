@@ -9,8 +9,11 @@ exactly where it left off.
 Uses Google Gemini Flash for slot extraction and response generation.
 """
 
+import asyncio
 import json
 import logging
+
+from tenacity import retry, stop_after_attempt, wait_exponential, RetryError
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -146,9 +149,19 @@ class BookingAgent:
         # 5. Check if all required slots are filled
         is_complete = len(slots_missing) == 0
 
+        # 5b. Simulate downstream API call with fault tolerance if complete
+        api_failed = False
+        if is_complete:
+            try:
+                # We pass simulate_failure_count=0 by default for standard operation,
+                # but tests can mock/inject this value.
+                await self._submit_booking_to_airline_api(slots_filled)
+            except RetryError:
+                api_failed = True
+
         # 6. Generate a response
         response = await self._generate_response(
-            user_message, slots_filled, slots_missing, is_complete, invalid_messages
+            user_message, slots_filled, slots_missing, is_complete, invalid_messages, api_failed
         )
 
         logger.info(
@@ -160,8 +173,35 @@ class BookingAgent:
             response=response,
             slots_filled=slots_filled,
             slots_missing=slots_missing,
+            # If the API failed, we don't consider the goal complete yet (or we can complete it and gracefully fail)
+            # We'll keep it complete but the response explains the failure.
             is_complete=is_complete,
         )
+
+    # State for deterministic testing
+    _current_failure_count = 0
+    _simulate_failure_count = 0
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
+    async def _submit_booking_to_airline_api(self, slots: dict) -> bool:
+        """
+        Mock downstream call to airline system of record.
+        Demonstrates fault tolerance via tenacity.
+        """
+        await asyncio.sleep(0.1)  # Simulate network latency
+
+        # Deterministic failure injection for testing
+        if self._simulate_failure_count > 0:
+            if self._current_failure_count < self._simulate_failure_count:
+                self._current_failure_count += 1
+                logger.warning(f"Simulated API Failure: 429 Too Many Requests (Attempt {self._current_failure_count})")
+                raise RuntimeError("429 Too Many Requests")
+            else:
+                # Reset for next time after success
+                self._current_failure_count = 0
+                return True
+
+        return True
 
     @staticmethod
     def _sanitize_slot_value(value: str, max_length: int = 200) -> str:
@@ -268,9 +308,13 @@ Extract any new slot values mentioned. Return null for slots not mentioned in th
         slots_missing: list[str],
         is_complete: bool,
         invalid_messages: list[str],
+        api_failed: bool = False,
     ) -> str:
         """Generate a natural-language response."""
         try:
+            if api_failed:
+                return "I have all your details, but the airline system is currently busy. Please try again in a few minutes."
+
             validation_context = ""
             if invalid_messages:
                 validation_context = (
