@@ -145,125 +145,136 @@ async def execute_agent(state: OrchestratorState) -> dict:
     for single_decision in decision.decisions:
         active_goal = None
 
-        # --- Check confidence for clarification ---
-        if single_decision.confidence < 0.5:
-            combined_responses.append(
-                "I'm not completely sure I understood that. Could you please rephrase?"
-            )
-            continue
-
-        # --- Handle stack operations based on router decision ---
-        if single_decision.action == "SMALL_TALK":
-            combined_responses.append(
-                "Got it! Let me know if there's anything else you need."
-            )
-            # Small talk doesn't affect the goal stack, skip agent dispatch
-            continue
-
-        elif single_decision.action == "NEW_GOAL_INTERRUPT":
-            # Check if current goal is interruptible
-            active_goal = await gsm.get_active_goal(session_id)
-            if active_goal and not getattr(active_goal, "interruptible", True):
+        try:
+            # --- Check confidence for clarification ---
+            if single_decision.confidence < 0.5:
                 combined_responses.append(
-                    f"Please complete your current {active_goal.intent_type} before starting something new."
+                    "I'm not completely sure I understood that. Could you please rephrase?"
                 )
                 continue
 
-            intent_type = single_decision.intent_type or "faq"
-            goal = await gsm.push_goal(session_id, intent_type)
-            active_goal = goal
-            logger.info(f"Pushed new {intent_type} goal: {goal.id}")
+            # --- Handle stack operations based on router decision ---
+            if single_decision.action == "SMALL_TALK":
+                combined_responses.append(
+                    "Got it! Let me know if there's anything else you need."
+                )
+                # Small talk doesn't affect the goal stack, skip agent dispatch
+                continue
 
-        elif single_decision.action == "CONTINUE_CURRENT":
-            goal = await gsm.get_active_goal(session_id)
-            if goal is None:
-                # No active goal — treat as a new goal
+            elif single_decision.action == "NEW_GOAL_INTERRUPT":
+                # Check if current goal is interruptible
+                active_goal = await gsm.get_active_goal(session_id)
+                if active_goal and not getattr(active_goal, "interruptible", True):
+                    combined_responses.append(
+                        f"Please complete your current {active_goal.intent_type} before starting something new."
+                    )
+                    continue
+
                 intent_type = single_decision.intent_type or "faq"
                 goal = await gsm.push_goal(session_id, intent_type)
-            active_goal = goal
+                active_goal = goal
+                logger.info(f"Pushed new {intent_type} goal: {goal.id}")
 
-        elif single_decision.action == "RESUME_PAUSED_GOAL":
-            if single_decision.target_goal_id:
-                try:
-                    goal = await gsm.resume_goal(
-                        session_id, UUID(single_decision.target_goal_id)
-                    )
-                    active_goal = goal
-                    logger.info(f"Resumed goal: {goal.id}")
-                except ValueError as e:
-                    logger.warning(f"Resume failed: {e}. Falling back to active goal.")
-                    active_goal = await gsm.get_active_goal(session_id)
-            else:
-                # No target specified — try to resume the most recent paused goal
-                goal_stack = await gsm.get_stack(session_id)
-                paused = [g for g in goal_stack.goals if g.status == "paused"]
-                if paused:
-                    goal = await gsm.resume_goal(session_id, paused[0].id)
-                    active_goal = goal
+            elif single_decision.action == "CONTINUE_CURRENT":
+                goal = await gsm.get_active_goal(session_id)
+                if goal is None:
+                    # No active goal — treat as a new goal
+                    intent_type = single_decision.intent_type or "faq"
+                    goal = await gsm.push_goal(session_id, intent_type)
+                active_goal = goal
+
+            elif single_decision.action == "RESUME_PAUSED_GOAL":
+                if single_decision.target_goal_id:
+                    try:
+                        goal = await gsm.resume_goal(
+                            session_id, UUID(single_decision.target_goal_id)
+                        )
+                        active_goal = goal
+                        logger.info(f"Resumed goal: {goal.id}")
+                    except ValueError as e:
+                        logger.warning(
+                            f"Resume failed: {e}. Falling back to active goal."
+                        )
+                        active_goal = await gsm.get_active_goal(session_id)
                 else:
-                    active_goal = await gsm.get_active_goal(session_id)
+                    # No target specified — try to resume the most recent paused goal
+                    goal_stack = await gsm.get_stack(session_id)
+                    paused = [g for g in goal_stack.goals if g.status == "paused"]
+                    if paused:
+                        goal = await gsm.resume_goal(session_id, paused[0].id)
+                        active_goal = goal
+                    else:
+                        active_goal = await gsm.get_active_goal(session_id)
 
-        elif single_decision.action == "ABANDON_GOAL":
-            current = await gsm.get_active_goal(session_id)
-            if current:
-                resumed = await gsm.abandon_goal(session_id, current.id)
-                active_goal = resumed
-                logger.info(f"Abandoned goal: {current.id}")
-            else:
-                active_goal = None
+            elif single_decision.action == "ABANDON_GOAL":
+                current = await gsm.get_active_goal(session_id)
+                if current:
+                    resumed = await gsm.abandon_goal(session_id, current.id)
+                    active_goal = resumed
+                    logger.info(f"Abandoned goal: {current.id}")
+                else:
+                    active_goal = None
 
-        # --- Dispatch to the appropriate agent ---
-        if active_goal is None:
-            combined_responses.append(
-                "I'm ready to help! You can ask me to book a flight or "
-                "ask any questions about Jps.ai's platform."
-            )
-            continue
-
-        # Select agent based on intent type
-        if active_goal.intent_type == "booking":
-            agent = _get_booking_agent()
-        elif active_goal.intent_type == "faq":
-            agent = _get_faq_agent()
-        elif active_goal.intent_type == "status":
-            agent = _get_status_agent()
-        else:
-            raise ValueError(f"Unknown intent type: {active_goal.intent_type}")
-
-        # Run the agent and validate the response
-        agent_response = await agent.process(
-            user_message=state["user_message"],
-            goal=active_goal,
-        )
-
-        # Enforce type safety
-        if not isinstance(agent_response, AgentResponse):
-            raise TypeError(
-                f"Agent {agent.__class__.__name__} did not return an AgentResponse object."
-            )
-
-        combined_responses.append(agent_response.response)
-
-        # Update goal slots
-        if agent_response.slots_filled or agent_response.slots_missing:
-            await gsm.update_slots(
-                active_goal.id,
-                agent_response.slots_filled,
-                agent_response.slots_missing,
-            )
-
-        # If the goal is complete, pop it (resumes the next paused goal)
-        if agent_response.is_complete:
-            resumed = await gsm.pop_goal(session_id)
-            logger.info(
-                f"Goal {active_goal.id} completed. "
-                f"Resumed: {resumed.id if resumed else 'none'}"
-            )
-            if resumed:
+            # --- Dispatch to the appropriate agent ---
+            if active_goal is None:
                 combined_responses.append(
-                    f"\n\n↪️ *Resuming your {resumed.intent_type} "
-                    f"from where you left off...*"
+                    "I'm ready to help! You can ask me to book a flight or "
+                    "ask any questions about Jps.ai's platform."
                 )
+                continue
+
+            # Select agent based on intent type
+            if active_goal.intent_type == "booking":
+                agent = _get_booking_agent()
+            elif active_goal.intent_type == "faq":
+                agent = _get_faq_agent()
+            elif active_goal.intent_type == "status":
+                agent = _get_status_agent()
+            else:
+                raise ValueError(f"Unknown intent type: {active_goal.intent_type}")
+
+            # Run the agent and validate the response
+            agent_response = await agent.process(
+                user_message=state["user_message"],
+                goal=active_goal,
+            )
+
+            # Enforce type safety
+            if not isinstance(agent_response, AgentResponse):
+                raise TypeError(
+                    f"Agent {agent.__class__.__name__} did not return an AgentResponse object."
+                )
+
+            combined_responses.append(agent_response.response)
+
+            # Update goal slots
+            if agent_response.slots_filled or agent_response.slots_missing:
+                await gsm.update_slots(
+                    active_goal.id,
+                    agent_response.slots_filled,
+                    agent_response.slots_missing,
+                )
+
+            # If the goal is complete, pop it (resumes the next paused goal)
+            if agent_response.is_complete:
+                resumed = await gsm.pop_goal(session_id)
+                logger.info(
+                    f"Goal {active_goal.id} completed. "
+                    f"Resumed: {resumed.id if resumed else 'none'}"
+                )
+                if resumed:
+                    combined_responses.append(
+                        f"\n\n↪️ *Resuming your {resumed.intent_type} "
+                        f"from where you left off...*"
+                    )
+        except Exception as e:
+            logger.error(
+                f"Error executing agent decision {single_decision.action}: {e}"
+            )
+            combined_responses.append(
+                "An internal error occurred while processing that request. Please try again."
+            )
+            break  # Break out of loop to ensure we log partial state and don't further corrupt stack
 
     # --- End of decisions loop ---
 

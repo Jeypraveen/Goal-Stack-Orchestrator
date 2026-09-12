@@ -76,7 +76,7 @@ function GoalCard({ goal, isActive }: { goal: Goal; isActive: boolean }) {
   const progress = allSlots > 0 ? (filledCount / allSlots) * 100 : 0;
 
   return (
-    <div className={`goal-card ${goal.status}`}>
+    <div className={`goal-card ${goal.status} ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
       {/* Header: type + status badge */}
       <div className="goal-card-header">
         <div className="goal-card-type">

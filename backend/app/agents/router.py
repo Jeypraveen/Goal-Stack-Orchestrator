@@ -101,7 +101,7 @@ class RouterDecisions(BaseModel):
 
 ROUTER_SYSTEM_PROMPT = """You are a conversation router for a Jps.ai.
 Your job is to classify each user message into ONE OR MORE actions based on the current goal stack state.
-If the user expresses multiple distinct intents in a single message (e.g., "Book a flight and what is your FAQ?"), 
+If the user expresses multiple distinct intents in a single message (e.g., "Book a flight and what is your FAQ?"),
 you MUST return multiple decisions in the `decisions` array. Order them logically (e.g., answer FAQs before starting new booking flows).
 
 ## Actions
@@ -197,21 +197,21 @@ class MessageRouter:
         """
         prompt_messages = self._build_prompt(user_message, goal_stack, recent_messages)
 
-        # Try primary model first, fall back to 8B on failure
+        # Try primary model first, fall back to 27B on failure
         try:
             decision = await self._primary_router.ainvoke(prompt_messages)
-            logger.info(f"Router (70B): Found {len(decision.decisions)} decisions.")
+            logger.info(f"Router (120B): Found {len(decision.decisions)} decisions.")
             return decision
 
         except Exception as primary_error:
             logger.warning(
-                f"Primary router (70B) failed: {primary_error}. "
-                f"Falling back to 8B model."
+                f"Primary router (120B) failed: {primary_error}. "
+                f"Falling back to 27B model."
             )
             try:
                 decision = await self._fallback_router.ainvoke(prompt_messages)
                 logger.info(
-                    f"Router (8B fallback): Found {len(decision.decisions)} decisions."
+                    f"Router (27B fallback): Found {len(decision.decisions)} decisions."
                 )
                 return decision
 

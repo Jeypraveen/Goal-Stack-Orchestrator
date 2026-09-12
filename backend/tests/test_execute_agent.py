@@ -3,12 +3,11 @@ Tests for the orchestrator's execute_agent node.
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 from datetime import datetime
 
 from app.graph.orchestrator import execute_agent
-from app.graph.state import OrchestratorState
 from app.models.goal import AgentResponse, Goal, GoalStackState
 
 

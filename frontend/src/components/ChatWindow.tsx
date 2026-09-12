@@ -46,17 +46,18 @@ export default function ChatWindow({ messages, isLoading, onSend }: ChatWindowPr
     }
   };
 
-  const getRouterLabel = (decision: string | null | undefined) => {
-    if (!decision) return null;
+  const getRouterLabels = (decision: string | null | undefined) => {
+    if (!decision) return [];
 
     const labels: Record<string, { icon: string; text: string; className: string }> = {
       CONTINUE_CURRENT: { icon: "↪", text: "CONTINUE", className: "" },
       NEW_GOAL_INTERRUPT: { icon: "⚡", text: "NEW GOAL", className: "new-goal" },
       RESUME_PAUSED_GOAL: { icon: "↩️", text: "RESUMED", className: "resume" },
       ABANDON_GOAL: { icon: "✕", text: "ABANDONED", className: "abandon" },
+      SMALL_TALK: { icon: "💬", text: "SMALL TALK", className: "" },
     };
 
-    return labels[decision] || null;
+    return decision.split(",").map(d => d.trim()).map(d => labels[d]).filter(Boolean);
   };
 
   return (
@@ -113,12 +114,16 @@ export default function ChatWindow({ messages, isLoading, onSend }: ChatWindowPr
                     )}
                   </div>
                   {msg.role === "assistant" && msg.router_decision && (() => {
-                    const label = getRouterLabel(msg.router_decision);
-                    if (!label) return null;
+                    const labels = getRouterLabels(msg.router_decision);
+                    if (labels.length === 0) return null;
                     return (
-                      <div className={`router-label ${label.className}`}>
-                        <span>{label.icon}</span>
-                        <span>{label.text}</span>
+                      <div className="flex gap-2 mt-2">
+                        {labels.map((label, idx) => (
+                          <div key={idx} className={`router-label ${label.className}`}>
+                            <span>{label.icon}</span>
+                            <span>{label.text}</span>
+                          </div>
+                        ))}
                       </div>
                     );
                   })()}

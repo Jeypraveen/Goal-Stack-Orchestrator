@@ -12,6 +12,7 @@ Uses Google Gemini Flash for slot extraction and response generation.
 import asyncio
 import json
 import logging
+from uuid import uuid4
 
 from tenacity import retry, stop_after_attempt, wait_exponential, RetryError
 
@@ -63,7 +64,7 @@ BOOKING_SYSTEM_PROMPT = """You are a friendly travel booking assistant. Your job
 
 ## Required Information (slots)
 1. **origin** — Where they're flying from (city or airport)
-2. **destination** — Where they're flying to (city or airport)  
+2. **destination** — Where they're flying to (city or airport)
 3. **date** — When they want to travel (date)
 
 ## Optional Information
@@ -99,28 +100,28 @@ class BookingAgent:
     REQUIRED_SLOTS = ["origin", "destination", "date"]
     OPTIONAL_SLOTS = ["passengers", "travel_class"]
 
-    def __init__(self):
-        self._llm = ChatGoogleGenerativeAI(
-            api_key=settings.google_api_key,
-            model=settings.agent_llm_model,
-            temperature=0.3,
-        )
+    def __init__(self, llm=None):
+        if llm is None:
+            # Lazy init or default to settings. Will raise error if no API key only when instantiated without one
+            self._llm = ChatGoogleGenerativeAI(
+                api_key=settings.google_api_key
+                or "dummy",  # Prevent crash on import if key missing
+                model=settings.agent_llm_model,
+                temperature=0.3,
+            )
+        else:
+            self._llm = llm
+
         self._extractor = self._llm.with_structured_output(ExtractedSlots)
 
     async def process(
         self,
         user_message: str,
         goal: Goal,
+        simulate_failure_count: int = 0,
     ) -> AgentResponse:
         """
         Process a user message for the booking goal.
-
-        Args:
-            user_message: The user's message.
-            goal: The current goal object with slots_filled and slots_missing.
-
-        Returns:
-            AgentResponse: The response message, slot updates, and completion status.
         """
         # 1. Extract slots from the user's message
         extracted = await self._extract_slots(user_message, goal)
@@ -152,16 +153,42 @@ class BookingAgent:
         # 5b. Simulate downstream API call with fault tolerance if complete
         api_failed = False
         if is_complete:
+            # Isolate retry state per-request to avoid race conditions on the singleton
+            attempts = 0
+            idempotency_key = str(uuid4())
+
+            @retry(
+                stop=stop_after_attempt(3),
+                wait=wait_exponential(multiplier=1, min=1, max=8),
+            )
+            async def _do_api_call():
+                nonlocal attempts
+                await asyncio.sleep(0.1)
+
+                # Deterministic failure injection for testing
+                if simulate_failure_count > 0 and attempts < simulate_failure_count:
+                    attempts += 1
+                    logger.warning(
+                        f"Simulated API Failure: 429 Too Many Requests (Attempt {attempts}, IdempotencyKey: {idempotency_key})"
+                    )
+                    raise RuntimeError("429 Too Many Requests")
+
+                logger.info(f"API Call Succeeded (IdempotencyKey: {idempotency_key})")
+                return True
+
             try:
-                # We pass simulate_failure_count=0 by default for standard operation,
-                # but tests can mock/inject this value.
-                await self._submit_booking_to_airline_api(slots_filled)
+                await _do_api_call()
             except RetryError:
                 api_failed = True
 
         # 6. Generate a response
         response = await self._generate_response(
-            user_message, slots_filled, slots_missing, is_complete, invalid_messages, api_failed
+            user_message,
+            slots_filled,
+            slots_missing,
+            is_complete,
+            invalid_messages,
+            api_failed,
         )
 
         logger.info(
@@ -177,31 +204,6 @@ class BookingAgent:
             # We'll keep it complete but the response explains the failure.
             is_complete=is_complete,
         )
-
-    # State for deterministic testing
-    _current_failure_count = 0
-    _simulate_failure_count = 0
-
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
-    async def _submit_booking_to_airline_api(self, slots: dict) -> bool:
-        """
-        Mock downstream call to airline system of record.
-        Demonstrates fault tolerance via tenacity.
-        """
-        await asyncio.sleep(0.1)  # Simulate network latency
-
-        # Deterministic failure injection for testing
-        if self._simulate_failure_count > 0:
-            if self._current_failure_count < self._simulate_failure_count:
-                self._current_failure_count += 1
-                logger.warning(f"Simulated API Failure: 429 Too Many Requests (Attempt {self._current_failure_count})")
-                raise RuntimeError("429 Too Many Requests")
-            else:
-                # Reset for next time after success
-                self._current_failure_count = 0
-                return True
-
-        return True
 
     @staticmethod
     def _sanitize_slot_value(value: str, max_length: int = 200) -> str:
@@ -234,7 +236,7 @@ class BookingAgent:
         """Extract booking slots from the user message."""
         try:
             prompt = f"""Extract any travel booking information from this message.
-            
+
 Current booking state:
 - Already filled: {json.dumps(goal.slots_filled)}
 - Still missing: {json.dumps(goal.slots_missing)}

@@ -95,6 +95,7 @@ class FAQAgent:
             AgentResponse: The answered FAQ.
             FAQ goals are always complete after one turn.
         """
+        is_failed = False
         try:
             system_prompt = FAQ_SYSTEM_PROMPT.format(
                 knowledge_base=self._knowledge_base
@@ -124,8 +125,12 @@ class FAQAgent:
                 "I'm having trouble accessing my knowledge base right now. "
                 "Please try asking your question again in a moment."
             )
+            is_failed = True
 
-        # FAQ goals are always single-turn — complete immediately
+        # FAQ goals are usually single-turn, but if they fail, don't complete them
         return AgentResponse(
-            response=answer, slots_filled={}, slots_missing=[], is_complete=True
+            response=answer,
+            slots_filled={},
+            slots_missing=[],
+            is_complete=not is_failed,
         )

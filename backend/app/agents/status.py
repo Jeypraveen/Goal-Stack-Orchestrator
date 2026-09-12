@@ -6,7 +6,6 @@ It proves that the goal-stack architecture supports hybrid
 (LLM + deterministic) agents.
 """
 
-import json
 import logging
 
 from app.database import get_db
@@ -58,11 +57,11 @@ class StatusAgent:
         except Exception as e:
             logger.error(f"Status agent failed: {e}")
             response = "I encountered an error while checking your booking status."
+            return AgentResponse(
+                response=response, slots_filled={}, slots_missing=[], is_complete=False
+            )
 
-        # Status checks are single-turn
+        # Status goals are single-turn — complete immediately on success
         return AgentResponse(
-            response=response,
-            slots_filled={},
-            slots_missing=[],
-            is_complete=True,
+            response=response, slots_filled={}, slots_missing=[], is_complete=True
         )

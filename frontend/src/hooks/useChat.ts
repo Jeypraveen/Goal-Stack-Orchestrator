@@ -12,7 +12,12 @@ export interface ChatMessage {
 }
 
 export function useChat() {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("jps_ai_session_id");
+    }
+    return null;
+  });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [goalStack, setGoalStack] = useState<Goal[]>([]);
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
@@ -25,21 +30,17 @@ export function useChat() {
     if (initRef.current) return;
     initRef.current = true;
 
-    const storedSessionId = sessionStorage.getItem("yellow_ai_session_id");
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-      return;
-    }
+    if (sessionId) return; // Already have one from initial state
 
     createSession()
       .then((session) => {
         setSessionId(session.id);
-        sessionStorage.setItem("yellow_ai_session_id", session.id);
+        sessionStorage.setItem("jps_ai_session_id", session.id);
       })
       .catch((err) => {
         setError(`Failed to create session: ${err.message}`);
       });
-  }, []);
+  }, [sessionId]);
 
   const send = useCallback(
     async (text: string) => {
@@ -73,11 +74,12 @@ export function useChat() {
         // Update goal stack
         setGoalStack(response.goal_stack || []);
         setActiveGoalId(response.active_goal_id);
-      } catch (err: any) {
+      } catch (err: unknown) {
         let errMsg = err instanceof Error ? err.message : "Unknown error";
         
         // Handle 429 Too Many Requests specifically
-        if (errMsg.includes("429") || (err.status && err.status === 429)) {
+        const statusErr = err as { status?: number };
+        if (errMsg.includes("429") || statusErr?.status === 429) {
           errMsg = "You're sending messages too fast. Please wait a moment.";
         }
         
