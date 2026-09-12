@@ -1,4 +1,4 @@
-# Goal-Stack Orchestrator
+# Jps.ai
 
 An enterprise-grade Conversational AI backend demonstrating **conversation state as a stack of goals**. This project is a working implementation of a modern "Super Agent" architecture (similar to Yellow.ai's OrchLLM), supporting multi-intent routing, context switching, and zero-shot NLP.
 

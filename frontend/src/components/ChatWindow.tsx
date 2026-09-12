@@ -12,7 +12,7 @@ interface ChatWindowProps {
 
 const SUGGESTIONS = [
   "Book a flight to London",
-  "What is Goal-Stack Orchestrator?",
+  "What is Jps.ai?",
   "I need to fly from NYC to Tokyo",
   "How does OrchLLM work?",
 ];
@@ -65,7 +65,7 @@ export default function ChatWindow({ messages, isLoading, onSend }: ChatWindowPr
       <div className="chat-header">
         <div className="chat-header-logo">G</div>
         <div>
-          <div className="chat-header-title">Goal-Stack Orchestrator</div>
+          <div className="chat-header-title">Jps.ai</div>
           <div className="chat-header-subtitle">
             Multi-goal conversation management
           </div>
@@ -77,7 +77,7 @@ export default function ChatWindow({ messages, isLoading, onSend }: ChatWindowPr
         {messages.length === 0 ? (
           <div className="welcome-container">
             <div className="welcome-icon">🎯</div>
-            <div className="welcome-title">Goal-Stack Orchestrator</div>
+            <div className="welcome-title">Jps.ai</div>
             <div className="welcome-subtitle">
               Start a conversation! Try booking a flight, then interrupt with a
               question — watch the goal stack manage both seamlessly.

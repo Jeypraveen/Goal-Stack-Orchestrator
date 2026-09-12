@@ -99,7 +99,7 @@ class RouterDecisions(BaseModel):
 # Router System Prompt
 # =========================================================================
 
-ROUTER_SYSTEM_PROMPT = """You are a conversation router for a goal-stack orchestrator.
+ROUTER_SYSTEM_PROMPT = """You are a conversation router for a Jps.ai.
 Your job is to classify each user message into ONE OR MORE actions based on the current goal stack state.
 If the user expresses multiple distinct intents in a single message (e.g., "Book a flight and what is your FAQ?"), 
 you MUST return multiple decisions in the `decisions` array. Order them logically (e.g., answer FAQs before starting new booking flows).

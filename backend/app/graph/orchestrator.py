@@ -216,7 +216,7 @@ async def execute_agent(state: OrchestratorState) -> dict:
         if active_goal is None:
             combined_responses.append(
                 "I'm ready to help! You can ask me to book a flight or "
-                "ask any questions about Goal-Stack Orchestrator's platform."
+                "ask any questions about Jps.ai's platform."
             )
             continue
 

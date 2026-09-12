@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Goal-Stack Orchestrator",
+    title="Jps.ai",
     description=(
         "A conversational AI backend that manages multiple concurrent user goals "
         "as a persistent stack — supporting mid-conversation interruption, topic "

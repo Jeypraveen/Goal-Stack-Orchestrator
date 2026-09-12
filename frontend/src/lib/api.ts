@@ -1,5 +1,5 @@
 /**
- * API client for the Goal-Stack Orchestrator backend.
+ * API client for the Jps.ai backend.
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";

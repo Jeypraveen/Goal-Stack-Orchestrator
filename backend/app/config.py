@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """All configuration for the Goal-Stack Orchestrator backend."""
+    """All configuration for the Jps.ai backend."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
