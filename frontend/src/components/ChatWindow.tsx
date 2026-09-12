@@ -14,7 +14,7 @@ const SUGGESTIONS = [
   "Book a flight to London",
   "What is Jps.ai?",
   "I need to fly from NYC to Tokyo",
-  "How does OrchLLM work?",
+  "How does Jps LLM work?",
 ];
 
 export default function ChatWindow({ messages, isLoading, onSend }: ChatWindowProps) {

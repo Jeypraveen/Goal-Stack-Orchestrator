@@ -4,20 +4,18 @@
 
 Jps.ai is an enterprise-grade conversational AI platform that enables businesses to build AI-powered chatbots and virtual assistants. It supports over 135 languages and can be deployed across 35+ channels including web, mobile, WhatsApp, and voice. The platform serves enterprise customers across industries like banking, healthcare, retail, and telecom.
 
-## What is the Orchestrator LLM (OrchLLM)?
+## What is the Orchestrator LLM (Jps LLM)?
 
-The Orchestrator LLM is Jps.ai's intelligent conversation management layer. It reads the entire conversation context, identifies user intents, and routes the conversation to the appropriate flow, tool, or knowledge base. Its key capability is handling multi-intent conversations — where a user might have multiple goals in a single conversation — and managing context switches between them.
+The Orchestrator LLM (Jps LLM) is a core component of Jps.ai's multi-agent architecture. It acts as the central router that receives every user message, analyzes the intent against the current goal stack, and delegates execution to specialized sub-agents (like the Booking Agent or FAQ Agent). It uses a large parameter model (120B) for zero-shot decision making, falling back to a smaller model (27B) during high latency or failure events to guarantee enterprise uptime.
 
-## How does context switching work in Jps.ai?
+Unlike traditional flow-based systems, Jps LLM dynamically manages state as a stack—allowing it to handle mid-conversation interruptions, out-of-bounds questions, and resumption natively.
 
-Context switching in Jps.ai allows the AI agent to handle situations where a user changes topics mid-conversation. For example, if a user is booking a flight and suddenly asks about baggage policies, the Orchestrator LLM detects this topic change, routes to the appropriate handler for the new topic, and can later resume the original booking flow. The system maintains conversation context across these switches.
+## What are the known limitations of Jps LLM?
 
-## What are the known limitations of OrchLLM?
+Jps LLM is highly capable, but currently has two known limitations:
 
-The Orchestrator LLM has several documented limitations:
-
-1. **No mother-child AI agent hierarchy support** — OrchLLM does not support parent-child delegation patterns where a supervisor agent decomposes tasks across subordinate agents.
-2. **Goal nodes are excluded from switching logic** — The orchestrator's context-switching mechanism does not encompass goal-node hierarchies.
+1. **No mother-child AI agent hierarchy support** — Jps LLM does not support parent-child delegation patterns where a supervisor agent decomposes tasks across subordinate agents.
+2. **Deterministic execution boundaries** — While Jps LLM handles the intent routing, the actual state transition is handled by a deterministic orchestrator loop. Agents cannot recursively call other agents; they must yield control back to the central router.
 3. **Single-layer orchestration** — The system manages multi-intent conversations within a single conversational flow rather than through hierarchical agent structures.
 
 These limitations mean that for complex, multi-step task delegation requiring hierarchical structures, users need to use Jps.ai's multi-agent workflow capabilities instead.
