@@ -8,8 +8,9 @@ current goal stack into one of four actions:
     RESUME_PAUSED_GOAL — User wants to go back to a paused goal
     ABANDON_GOAL       — User wants to stop the current goal
 
-Uses Groq's Llama 3.3 70B as the primary model with structured output.
-Falls back to Llama 3.1 8B when the 70B daily quota is >80% consumed.
+Uses Groq-hosted models with structured JSON output:
+    Primary:  openai/gpt-oss-120b (higher quality)
+    Fallback: qwen/qwen3.6-27b   (higher quota headroom)
 
 The router returns structured JSON (Pydantic model), never free text.
 """
@@ -149,10 +150,10 @@ you MUST return multiple decisions in the `decisions` array. Order them logicall
 
 class MessageRouter:
     """
-    Routes incoming messages using Groq's LLMs with structured output.
+    Routes incoming messages using Groq-hosted LLMs with structured output.
 
-    Primary: Llama 3.3 70B (higher quality)
-    Fallback: Llama 3.1 8B (14x higher daily quota)
+    Primary: openai/gpt-oss-120b (higher quality)
+    Fallback: qwen/qwen3.6-27b (higher quota headroom)
     """
 
     PRIMARY_MODEL = "openai/gpt-oss-120b"

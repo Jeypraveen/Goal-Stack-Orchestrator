@@ -23,7 +23,7 @@ from app.agents.router import MessageRouter
 from app.agents.status import StatusAgent
 from app.database import get_db
 from app.graph.state import OrchestratorState
-from app.models.goal import AgentResponse
+from app.models.goal import Goal, GoalStackState, AgentResponse
 from app.models.message import MessageCreate
 from app.services.goal_stack import GoalStackManager
 from app.services.session import SessionService
@@ -108,8 +108,6 @@ async def route_message(state: OrchestratorState) -> dict:
     session_id = UUID(state["session_id"])
 
     # Build goal stack state for the router
-    from app.models.goal import GoalStackState, AgentResponse, Goal
-
     goals = [Goal(**g) for g in state["goal_stack"]]
     goal_stack_state = GoalStackState(
         session_id=session_id,
@@ -117,13 +115,10 @@ async def route_message(state: OrchestratorState) -> dict:
         active_goal=Goal(**state["active_goal"]) if state["active_goal"] else None,
     )
 
-    # Limit context window to the last 10 messages to prevent token bloat
-    recent = state["recent_messages"][-10:] if len(state["recent_messages"]) > 10 else state["recent_messages"]
-    
     decision = await router.route(
         user_message=state["user_message"],
         goal_stack=goal_stack_state,
-        recent_messages=recent,
+        recent_messages=state["recent_messages"],
     )
 
     return {"router_decision": decision}
@@ -162,9 +157,7 @@ async def execute_agent(state: OrchestratorState) -> dict:
             combined_responses.append(
                 "Got it! Let me know if there's anything else you need."
             )
-            # Small talk doesn't affect the goal stack
-            active_goal = await gsm.get_active_goal(session_id)
-            # Skip agent dispatch for small talk
+            # Small talk doesn't affect the goal stack, skip agent dispatch
             continue
 
         elif single_decision.action == "NEW_GOAL_INTERRUPT":
@@ -223,7 +216,7 @@ async def execute_agent(state: OrchestratorState) -> dict:
         if active_goal is None:
             combined_responses.append(
                 "I'm ready to help! You can ask me to book a flight or "
-                "ask any questions about Jps.ai's platform."
+                "ask any questions about Goal-Stack Orchestrator's platform."
             )
             continue
 

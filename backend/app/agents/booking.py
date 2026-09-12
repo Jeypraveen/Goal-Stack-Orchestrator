@@ -122,7 +122,7 @@ class BookingAgent:
         # 1. Extract slots from the user's message
         extracted = await self._extract_slots(user_message, goal)
 
-        # 2. Merge extracted slots with existing ones
+        # 2. Merge extracted slots with existing ones (sanitized)
         slots_filled = dict(goal.slots_filled)  # copy
         for slot_name in [
             "origin",
@@ -133,17 +133,22 @@ class BookingAgent:
         ]:
             value = getattr(extracted, slot_name, None)
             if value is not None:
+                if isinstance(value, str):
+                    value = self._sanitize_slot_value(value)
                 slots_filled[slot_name] = value
 
-        # 3. Determine what's still missing
+        # 3. Validate slots and remove invalid ones
+        invalid_messages = self._validate_slots(slots_filled)
+
+        # 4. Determine what's still missing
         slots_missing = [s for s in self.REQUIRED_SLOTS if s not in slots_filled]
 
-        # 4. Check if all required slots are filled
+        # 5. Check if all required slots are filled
         is_complete = len(slots_missing) == 0
 
-        # 5. Generate a response
+        # 6. Generate a response
         response = await self._generate_response(
-            user_message, slots_filled, slots_missing, is_complete
+            user_message, slots_filled, slots_missing, is_complete, invalid_messages
         )
 
         logger.info(
@@ -157,6 +162,32 @@ class BookingAgent:
             slots_missing=slots_missing,
             is_complete=is_complete,
         )
+    @staticmethod
+    def _sanitize_slot_value(value: str, max_length: int = 200) -> str:
+        """Sanitize a slot value to prevent prompt injection.
+
+        Slot values are stored in the DB and re-injected into future prompts.
+        A malicious value planted once keeps re-entering the prompt on every
+        subsequent turn. This method neutralizes common injection patterns.
+        """
+        import re
+
+        # Cap length
+        value = value[:max_length].strip()
+
+        # Strip common injection markers (case-insensitive)
+        injection_patterns = [
+            r"(?i)ignore\s+(all\s+)?previous\s+instructions",
+            r"(?i)you\s+are\s+now",
+            r"(?i)system\s*:",
+            r"(?i)forget\s+(everything|all|your\s+instructions)",
+            r"(?i)new\s+instructions?\s*:",
+            r"(?i)override\s+(your\s+)?instructions",
+        ]
+        for pattern in injection_patterns:
+            value = re.sub(pattern, "", value).strip()
+
+        return value
 
     async def _extract_slots(self, user_message: str, goal: Goal) -> ExtractedSlots:
         """Extract booking slots from the user message."""
@@ -185,15 +216,58 @@ Extract any new slot values mentioned. Return null for slots not mentioned in th
             logger.warning(f"Slot extraction failed: {e}. Returning empty extraction.")
             return ExtractedSlots()
 
+    @staticmethod
+    def _validate_slots(slots_filled: dict) -> list[str]:
+        """Validate filled slots and remove invalid ones from the dictionary.
+        
+        Returns a list of error messages for the user.
+        """
+        from datetime import datetime
+        errors = []
+
+        # Validate date
+        if "date" in slots_filled:
+            try:
+                datetime.fromisoformat(slots_filled["date"])
+            except ValueError:
+                errors.append(f"I couldn't understand the date '{slots_filled['date']}'. Please use YYYY-MM-DD format.")
+                del slots_filled["date"]
+
+        # Validate passengers
+        if "passengers" in slots_filled:
+            try:
+                passengers = int(slots_filled["passengers"])
+                if not (1 <= passengers <= 9):
+                    errors.append("Passenger count must be between 1 and 9.")
+                    del slots_filled["passengers"]
+                else:
+                    slots_filled["passengers"] = passengers
+            except (ValueError, TypeError):
+                errors.append("Passenger count must be a number.")
+                del slots_filled["passengers"]
+                
+        # Validate origin != destination
+        if "origin" in slots_filled and "destination" in slots_filled:
+            if slots_filled["origin"].strip().lower() == slots_filled["destination"].strip().lower():
+                errors.append("Origin and destination cannot be the same.")
+                del slots_filled["destination"]
+
+        return errors
+
     async def _generate_response(
         self,
         user_message: str,
         slots_filled: dict,
         slots_missing: list[str],
         is_complete: bool,
+        invalid_messages: list[str],
     ) -> str:
         """Generate a natural-language response."""
         try:
+            validation_context = ""
+            if invalid_messages:
+                validation_context = "\nValidation Errors (mention these nicely to the user):\n" + "\n".join(f"- {msg}" for msg in invalid_messages)
+
             if is_complete:
                 # Booking confirmation
                 prompt = f"""The user has provided all required booking information:
@@ -202,6 +276,7 @@ Extract any new slot values mentioned. Return null for slots not mentioned in th
 - Date: {slots_filled.get('date')}
 - Passengers: {slots_filled.get('passengers', 1)}
 - Class: {slots_filled.get('travel_class', 'economy')}
+{validation_context}
 
 Generate a friendly confirmation message summarizing their booking. Keep it concise (2-3 sentences)."""
             else:
@@ -210,10 +285,11 @@ Generate a friendly confirmation message summarizing their booking. Keep it conc
                 prompt = f"""Current booking state:
 - Filled: {json.dumps(slots_filled)}
 - Still needed: {json.dumps(slots_missing)}
+{validation_context}
 
 The user just said: "{user_message}"
 
-Acknowledge any new information they provided, then ask for the next missing piece: "{next_slot}".
+Acknowledge any new information they provided, address any validation errors, and ask for the next missing piece: "{next_slot}".
 Keep it conversational and concise (2-3 sentences max)."""
 
             response = await self._llm.ainvoke(

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Module-level connection reference, initialized during app startup
 _conn: aiosqlite.Connection | None = None
-_db_write_lock = asyncio.Lock()
+_session_locks: dict[str, asyncio.Lock] = {}
 
 
 async def init_db(database_url: str) -> aiosqlite.Connection:
@@ -21,7 +21,7 @@ async def init_db(database_url: str) -> aiosqlite.Connection:
     Initialize the SQLite database connection and create tables.
 
     Args:
-        database_url: SQLite database path (e.g., 'Jps.db')
+        database_url: SQLite database path (e.g., 'orchestrator.db')
 
     Returns:
         The initialized connection.
@@ -29,7 +29,7 @@ async def init_db(database_url: str) -> aiosqlite.Connection:
     global _conn
 
     # Strip 'sqlite:///' if present to get the local file path
-    db_path = database_url.replace("sqlite:///", "") if database_url else "Jps.db"
+    db_path = database_url.replace("sqlite:///", "") if database_url else "orchestrator.db"
 
     logger.info(f"Connecting to SQLite database at {db_path}")
     _conn = await aiosqlite.connect(db_path)
@@ -46,6 +46,7 @@ async def init_db(database_url: str) -> aiosqlite.Connection:
     await _conn.executescript("""
         CREATE TABLE IF NOT EXISTS sessions (
             id TEXT PRIMARY KEY,
+            metadata TEXT DEFAULT '{}',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -74,6 +75,21 @@ async def init_db(database_url: str) -> aiosqlite.Connection:
             router_decision TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        -- CRITICAL: Enforce at most one active goal per session at the DB level
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_goal_per_session
+            ON goal_stack (session_id) WHERE status = 'active';
+
+        -- Enforce unique stack positions within a session
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_stack_position
+            ON goal_stack (session_id, stack_position);
+
+        -- Performance indexes
+        CREATE INDEX IF NOT EXISTS idx_goals_session_status
+            ON goal_stack (session_id, status);
+
+        CREATE INDEX IF NOT EXISTS idx_messages_session_created
+            ON messages (session_id, created_at);
     """)
     await _conn.commit()
 
@@ -102,8 +118,12 @@ def get_db() -> aiosqlite.Connection:
         )
     return _conn
 
-def get_db_lock() -> asyncio.Lock:
+def get_session_lock(session_id: str) -> asyncio.Lock:
     """
-    Get the global database write lock.
+    Get a per-session write lock. Created lazily on first access.
+    Ensures concurrent requests for the SAME session are serialized,
+    while requests for DIFFERENT sessions proceed in parallel.
     """
-    return _db_write_lock
+    if session_id not in _session_locks:
+        _session_locks[session_id] = asyncio.Lock()
+    return _session_locks[session_id]

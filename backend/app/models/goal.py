@@ -13,22 +13,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
 
 
-class GoalCreate(BaseModel):
-    """Schema for creating a new goal (pushed onto the stack)."""
-
-    intent_type: Literal["booking", "faq"] = Field(
-        ..., description="The type of goal — determines which agent handles it."
-    )
-    slots_filled: dict = Field(
-        default_factory=dict,
-        description="Key-value pairs of already-filled slots.",
-    )
-    slots_missing: list[str] = Field(
-        default_factory=list,
-        description="List of slot names still needed.",
-    )
-
-
 class Goal(BaseModel):
     """
     A single goal on the stack.
@@ -43,7 +27,7 @@ class Goal(BaseModel):
 
     id: UUID
     session_id: UUID
-    intent_type: str
+    intent_type: Literal["booking", "faq", "status"]
     status: Literal["active", "paused", "completed", "abandoned"]
     slots_filled: dict
     slots_missing: list[str]

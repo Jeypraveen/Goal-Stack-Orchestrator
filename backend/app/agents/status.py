@@ -6,9 +6,12 @@ It proves that the goal-stack architecture supports hybrid
 (LLM + deterministic) agents.
 """
 
+import json
 import logging
-from app.models.goal import Goal, AgentResponse
+
 from app.database import get_db
+from app.models.goal import Goal, AgentResponse
+from app.services.goal_stack import GoalStackManager
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +19,7 @@ logger = logging.getLogger(__name__)
 class StatusAgent:
     """
     Deterministic rule-based agent for checking booking status.
-    No LLM involved.
+    No LLM involved — uses the GoalStackManager service layer.
     """
 
     async def process(
@@ -26,27 +29,17 @@ class StatusAgent:
     ) -> AgentResponse:
         """
         Process a status check request.
-        For demo purposes, we'll just mock a successful status check
-        or look for completed booking goals in the session.
+        Looks for completed booking goals in the session via the service layer.
         """
         try:
             db = get_db()
+            gsm = GoalStackManager(db)
 
-            # Find any completed booking goals for this session
-            async with db.execute(
-                """
-                SELECT slots_filled FROM goal_stack 
-                WHERE session_id = ? AND intent_type = 'booking' AND status = 'completed'
-                ORDER BY updated_at DESC LIMIT 1
-                """,
-                (str(goal.session_id),),
-            ) as cursor:
-                row = await cursor.fetchone()
+            # Use the service layer instead of raw SQL
+            completed_booking = await gsm.get_last_completed_booking(goal.session_id)
 
-            if row:
-                import json
-
-                slots = json.loads(row["slots_filled"])
+            if completed_booking:
+                slots = completed_booking.slots_filled
                 origin = slots.get("origin", "Unknown")
                 dest = slots.get("destination", "Unknown")
                 date = slots.get("date", "Unknown")

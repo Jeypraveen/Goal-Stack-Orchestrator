@@ -20,23 +20,21 @@ class SessionService:
 
     async def create_session(self, metadata: dict | None = None) -> Session:
         """Create a new conversation session."""
+        import json
+
         new_id = str(uuid.uuid4())
+        metadata_json = json.dumps(metadata or {})
 
         async with self._conn.execute(
             """
-            INSERT INTO sessions (id)
-            VALUES (?)
+            INSERT INTO sessions (id, metadata)
+            VALUES (?, ?)
             RETURNING *
             """,
-            (new_id,),
+            (new_id, metadata_json),
         ) as cursor:
             row = await cursor.fetchone()
             await self._conn.commit()
-            # SQLite doesn't have a JSON column, so we manually parse if we added metadata column later.
-            # Currently our schema doesn't have a metadata column in sessions, wait!
-            # The original code inserted into (metadata). Let's check our schema in database.py.
-            # My database.py omitted the 'metadata' column for sessions!
-            # I will just return the session.
             return self._row_to_session(row)
 
     async def get_session(self, session_id: UUID) -> Session | None:
@@ -113,11 +111,15 @@ class SessionService:
     @staticmethod
     def _row_to_session(row) -> Session:
         """Convert an aiosqlite Row to a Session model."""
+        import json
+
+        raw_meta = row["metadata"] if "metadata" in row.keys() else "{}"
+        metadata = json.loads(raw_meta) if isinstance(raw_meta, str) else raw_meta
         return Session(
             id=row["id"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
-            metadata={},
+            metadata=metadata,
         )
 
     @staticmethod

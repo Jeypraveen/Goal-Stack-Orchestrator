@@ -12,7 +12,7 @@ interface ChatWindowProps {
 
 const SUGGESTIONS = [
   "Book a flight to London",
-  "What is Jps.ai?",
+  "What is Goal-Stack Orchestrator?",
   "I need to fly from NYC to Tokyo",
   "How does OrchLLM work?",
 ];

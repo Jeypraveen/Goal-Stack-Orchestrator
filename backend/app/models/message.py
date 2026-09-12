@@ -21,7 +21,7 @@ class MessageCreate(BaseModel):
 class Message(BaseModel):
     """A single message in the conversation log."""
 
-    id: int | str
+    id: int
     session_id: UUID
     role: Literal["user", "assistant", "system"]
     content: str

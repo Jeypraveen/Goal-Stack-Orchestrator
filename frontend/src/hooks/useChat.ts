@@ -25,9 +25,16 @@ export function useChat() {
     if (initRef.current) return;
     initRef.current = true;
 
+    const storedSessionId = sessionStorage.getItem("yellow_ai_session_id");
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+      return;
+    }
+
     createSession()
       .then((session) => {
         setSessionId(session.id);
+        sessionStorage.setItem("yellow_ai_session_id", session.id);
       })
       .catch((err) => {
         setError(`Failed to create session: ${err.message}`);
@@ -66,8 +73,14 @@ export function useChat() {
         // Update goal stack
         setGoalStack(response.goal_stack || []);
         setActiveGoalId(response.active_goal_id);
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : "Unknown error";
+      } catch (err: any) {
+        let errMsg = err instanceof Error ? err.message : "Unknown error";
+        
+        // Handle 429 Too Many Requests specifically
+        if (errMsg.includes("429") || (err.status && err.status === 429)) {
+          errMsg = "You're sending messages too fast. Please wait a moment.";
+        }
+        
         setError(errMsg);
         // Add error message
         setMessages((prev) => [
@@ -75,7 +88,7 @@ export function useChat() {
           {
             id: `error-${Date.now()}`,
             role: "assistant",
-            content: `⚠️ Something went wrong: ${errMsg}. Please try again.`,
+            content: `⚠️ ${errMsg}`,
             timestamp: new Date(),
           },
         ]);
@@ -90,6 +103,7 @@ export function useChat() {
     try {
       const session = await createSession();
       setSessionId(session.id);
+      sessionStorage.setItem("yellow_ai_session_id", session.id);
       setMessages([]);
       setGoalStack([]);
       setActiveGoalId(null);

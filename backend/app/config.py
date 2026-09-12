@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # --- Database connection ---
-    database_url: str = "sqlite:///Jps.db"
+    database_url: str = "sqlite:///orchestrator.db"
 
     # --- Groq (Router LLM) ---
     groq_api_key: str = ""

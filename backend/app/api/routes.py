@@ -16,7 +16,7 @@ from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.database import get_db, get_db_lock
+from app.database import get_db, get_session_lock
 from app.graph.orchestrator import orchestrator_graph
 from app.models.message import ChatRequest, ChatResponse, Message
 from app.models.session import Session, SessionCreate
@@ -81,8 +81,9 @@ async def chat(request: Request, session_id: UUID, body: ChatRequest):
         raise HTTPException(status_code=404, detail="Session not found")
 
     try:
-        # Run the orchestrator graph with a write lock to prevent concurrent DB writes
-        async with get_db_lock():
+        # Per-session lock: serializes requests for the same session,
+        # but allows different sessions to proceed concurrently.
+        async with get_session_lock(str(session_id)):
             result = await orchestrator_graph.ainvoke(
                 {
                     "session_id": str(session_id),

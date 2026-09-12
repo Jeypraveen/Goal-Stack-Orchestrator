@@ -65,7 +65,7 @@ async def test_router_multi_intent(mock_chat_groq):
     dummy_session = uuid.uuid4()
     dummy_stack = GoalStackState(session_id=dummy_session, goals=[], active_goal=None)
     decisions = await router.route(
-        "I want to book a flight, but first what is Jps.ai?", dummy_stack, []
+        "I want to book a flight, but first what is Goal-Stack Orchestrator?", dummy_stack, []
     )
 
     assert len(decisions.decisions) == 2
