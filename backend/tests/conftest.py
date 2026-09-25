@@ -1,3 +1,7 @@
+import os
+os.environ["GROQ_API_KEY"] = "mock_groq_key_for_testing"
+os.environ["GOOGLE_API_KEY"] = "mock_google_key_for_testing"
+
 import pytest_asyncio
 
 from app.database import init_db, close_db
