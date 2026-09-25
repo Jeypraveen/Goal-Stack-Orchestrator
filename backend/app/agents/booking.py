@@ -236,7 +236,11 @@ class BookingAgent:
     async def _extract_slots(self, user_message: str, goal: Goal) -> ExtractedSlots:
         """Extract booking slots from the user message."""
         try:
+            from datetime import datetime
+            today_date = datetime.now().strftime("%Y-%m-%d")
             prompt = f"""Extract any travel booking information from this message.
+
+Current date: {today_date} (Use this to resolve relative dates like "tomorrow" to YYYY-MM-DD)
 
 Current booking state:
 - Already filled: {json.dumps(goal.slots_filled)}
@@ -346,7 +350,10 @@ Generate a friendly confirmation message summarizing their booking. Keep it conc
 
 The user just said: "{user_message}"
 
-Acknowledge any new information they provided, address any validation errors, and ask for the next missing piece: "{next_slot}".
+CRITICAL INSTRUCTIONS:
+1. You MUST address any Validation Errors provided above.
+2. You MUST ask the user to provide the next missing piece: "{next_slot}". 
+3. DO NOT pretend the booking is complete. The system requires exactly what is missing.
 Keep it conversational and concise (2-3 sentences max)."""
 
             response = await self._llm.ainvoke(
