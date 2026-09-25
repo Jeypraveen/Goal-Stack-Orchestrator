@@ -237,6 +237,7 @@ class BookingAgent:
         """Extract booking slots from the user message."""
         try:
             from datetime import datetime
+
             today_date = datetime.now().strftime("%Y-%m-%d")
             prompt = f"""Extract any travel booking information from this message.
 
