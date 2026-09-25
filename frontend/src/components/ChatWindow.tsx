@@ -81,7 +81,7 @@ export default function ChatWindow({ messages, isLoading, onSend }: ChatWindowPr
             <div className="welcome-title">Jps.ai</div>
             <div className="welcome-subtitle">
               Start a conversation! Try booking a flight, then interrupt with a
-              question — watch the goal stack manage both seamlessly.
+              question - watch the goal stack manage both seamlessly.
             </div>
             <div className="welcome-suggestions">
               {SUGGESTIONS.map((s) => (

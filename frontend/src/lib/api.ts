@@ -68,7 +68,7 @@ export async function sendMessage(
   });
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(`Chat failed: ${res.status} — ${detail}`);
+    throw new Error(`Chat failed: ${res.status} - ${detail}`);
   }
   return res.json();
 }

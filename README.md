@@ -1,13 +1,13 @@
-# Jps.ai
+# Goal-Stack Orchestrator Demo
 
-An enterprise-grade Conversational AI backend demonstrating **conversation state as a stack of goals**. This project is a working implementation of a modern "Super Agent" architecture (similar to Jps LLM), supporting multi-intent routing, context switching, and zero-shot NLP.
+A conversational AI backend demonstrating **conversation state as a stack of goals**. This project is a demo inspired by [Yellow.ai's Orchestrator LLM](https://yellow.ai/orchestrator-llm/), demonstrating multi-intent routing, context switching, and zero-shot NLP capabilities.
 
 ## 🚀 Key Features
 
 *   **Goal-Stack Architecture:** Handles non-linear conversations. If a user interrupts a flight booking to ask a question, the booking is paused (pushed down the stack), the question is answered, and the booking resumes exactly where it left off.
 *   **Multi-Intent Routing:** The Router LLM identifies intent types and operations (e.g., `NEW_GOAL_INTERRUPT`, `RESUME_PAUSED_GOAL`, `SMALL_TALK`).
 *   **Hybrid Agent Model:** Coordinates between LLM-powered agents (Booking, FAQ) and deterministic rule-based agents (Status Check).
-*   **Extensible Design:** Agents are treated as independent nodes in a LangGraph state machine, making it trivial to add new capabilities.
+*   **Extensible Design:** A linear LangGraph state machine controls the flow, dispatching to modular agents.
 
 ## 🧠 Architecture Overview
 
@@ -36,8 +36,8 @@ graph TD
 ## 🛠 Tech Stack
 
 *   **Backend:** FastAPI, LangGraph, Pydantic, aiosqlite (WAL mode)
-*   **Frontend:** Next.js 14, React, Tailwind CSS
-*   **LLMs:** Groq (Llama 3 8B for Routing) & Google Gemini (1.5 Flash for Agents)
+*   **Frontend:** Next.js 16, React, Tailwind CSS
+*   **LLMs:** Groq (gpt-oss-120b for Routing) & Google Gemini (3.6 Flash for Agents)
 
 ## 📦 Local Setup
 

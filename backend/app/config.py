@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # --- Groq (Router LLM) ---
     groq_api_key: str = ""
 
-    # --- Google AI Studio (Gemini Flash — Agent LLM) ---
+    # --- Google AI Studio (Gemini Flash - Agent LLM) ---
     google_api_key: str = ""
     agent_llm_model: str = "gemini-3.6-flash"
 
@@ -54,5 +54,5 @@ def get_settings() -> Settings:
     return Settings()
 
 
-# Convenience alias — import this everywhere
+# Convenience alias - import this everywhere
 settings = get_settings()

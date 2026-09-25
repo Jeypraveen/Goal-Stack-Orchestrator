@@ -1,22 +1,20 @@
-# Jps.ai Platform — Frequently Asked Questions
+# Jps.ai Platform - Frequently Asked Questions
 
-## What is Jps.ai?
-
-Jps.ai is an enterprise-grade conversational AI platform that enables businesses to build AI-powered chatbots and virtual assistants. It supports over 135 languages and can be deployed across 35+ channels including web, mobile, WhatsApp, and voice. The platform serves enterprise customers across industries like banking, healthcare, retail, and telecom.
+Jps.ai is a conversational AI demo inspired by Yellow.ai's Orchestrator LLM. It demonstrates how to manage complex conversation state using a goal-stack architecture.
 
 ## What is the Orchestrator LLM (Jps LLM)?
 
-The Orchestrator LLM (Jps LLM) is a core component of Jps.ai's multi-agent architecture. It acts as the central router that receives every user message, analyzes the intent against the current goal stack, and delegates execution to specialized sub-agents (like the Booking Agent or FAQ Agent). It uses a large parameter model (120B) for zero-shot decision making, falling back to a smaller model (27B) during high latency or failure events to guarantee enterprise uptime.
+The Orchestrator LLM (Jps LLM) is a core component of this multi-agent architecture demo. It acts as the central router that receives every user message, analyzes the intent against the current goal stack, and delegates execution to specialized sub-agents (like the Booking Agent or FAQ Agent). It uses a large parameter model for zero-shot decision making.
 
-Unlike traditional flow-based systems, Jps LLM dynamically manages state as a stack—allowing it to handle mid-conversation interruptions, out-of-bounds questions, and resumption natively.
+Unlike traditional flow-based systems, Jps LLM dynamically manages state as a stack-allowing it to handle mid-conversation interruptions, out-of-bounds questions, and resumption natively.
 
 ## What are the known limitations of Jps LLM?
 
 Jps LLM is highly capable, but currently has two known limitations:
 
-1. **No mother-child AI agent hierarchy support** — Jps LLM does not support parent-child delegation patterns where a supervisor agent decomposes tasks across subordinate agents.
-2. **Deterministic execution boundaries** — While Jps LLM handles the intent routing, the actual state transition is handled by a deterministic orchestrator loop. Agents cannot recursively call other agents; they must yield control back to the central router.
-3. **Single-layer orchestration** — The system manages multi-intent conversations within a single conversational flow rather than through hierarchical agent structures.
+1. **No mother-child AI agent hierarchy support** - Jps LLM does not support parent-child delegation patterns where a supervisor agent decomposes tasks across subordinate agents.
+2. **Deterministic execution boundaries** - While Jps LLM handles the intent routing, the actual state transition is handled by a deterministic orchestrator loop. Agents cannot recursively call other agents; they must yield control back to the central router.
+3. **Single-layer orchestration** - The system manages multi-intent conversations within a single conversational flow rather than through hierarchical agent structures.
 
 These limitations mean that for complex, multi-step task delegation requiring hierarchical structures, users need to use Jps.ai's multi-agent workflow capabilities instead.
 
@@ -48,10 +46,9 @@ When a user sends a message containing multiple intents (e.g., "Book me a flight
 
 ## What makes Jps.ai different from other chatbot platforms?
 
-Key differentiators include:
-- **Enterprise focus**: Built for large-scale deployments with SOC 2, GDPR, and HIPAA compliance
-- **Multilingual**: Native support for 135+ languages without translation layers
-- **Orchestrator LLM**: Unique conversation management layer that goes beyond simple intent matching
-- **Hybrid AI**: Combines LLM capabilities with deterministic workflow automation for predictable, auditable outcomes
-- **Zero-shot learning**: Ability to handle new intents without explicit training data, powered by LLM understanding
+Key features demonstrated include:
+- **Goal-Stack Architecture**: Handles non-linear conversations.
+- **Orchestrator LLM**: Unique conversation management layer that goes beyond simple intent matching.
+- **Hybrid AI**: Combines LLM capabilities with deterministic workflow automation.
+- **Zero-shot learning**: Ability to handle new intents without explicit training data, powered by LLM understanding.
 

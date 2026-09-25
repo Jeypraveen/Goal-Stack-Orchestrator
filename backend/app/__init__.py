@@ -1,1 +1,1 @@
-# Jps.ai — Backend App
+# Jps.ai - Backend App

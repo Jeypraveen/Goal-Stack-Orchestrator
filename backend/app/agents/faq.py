@@ -1,11 +1,11 @@
 """
-FAQ Agent — a knowledge-grounded agent for answering questions.
+FAQ Agent - a knowledge-grounded agent for answering questions.
 
 Loads a static markdown knowledge base at initialization and answers
 user questions grounded in that content. Uses Google Gemini Flash.
 
 FAQ goals are single-turn: they complete immediately after answering.
-This models real-world behavior — a user interrupts a booking to ask
+This models real-world behavior - a user interrupts a booking to ask
 a quick question, gets the answer, and the booking automatically
 resurfaces from the stack.
 

@@ -1,12 +1,12 @@
 """
-Router LLM — the decision brain of the orchestrator.
+Router LLM - the decision brain of the orchestrator.
 
 On every incoming user message, the router classifies it against the
 current goal stack into one of four actions:
-    CONTINUE_CURRENT   — User is continuing the active goal
-    NEW_GOAL_INTERRUPT — User is starting a new, different goal
-    RESUME_PAUSED_GOAL — User wants to go back to a paused goal
-    ABANDON_GOAL       — User wants to stop the current goal
+    CONTINUE_CURRENT   - User is continuing the active goal
+    NEW_GOAL_INTERRUPT - User is starting a new, different goal
+    RESUME_PAUSED_GOAL - User wants to go back to a paused goal
+    ABANDON_GOAL       - User wants to stop the current goal
 
 Uses Groq-hosted models with structured JSON output:
     Primary:  openai/gpt-oss-120b (higher quality)
@@ -123,7 +123,7 @@ you MUST return multiple decisions in the `decisions` array. Order them logicall
 
 4. **ABANDON_GOAL**: The user explicitly wants to stop/cancel the current goal.
    - They say "cancel", "never mind", "stop this", "I don't want to book anymore"
-   - Must be explicit — confusion or changing topic is NEW_GOAL_INTERRUPT, not ABANDON
+   - Must be explicit - confusion or changing topic is NEW_GOAL_INTERRUPT, not ABANDON
 
 5. **SMALL_TALK**: The user makes casual remarks, jokes, or says "okay/thanks".
    - e.g., "haha nice", "okay got it", "that's cool"
@@ -157,7 +157,7 @@ class MessageRouter:
     """
 
     PRIMARY_MODEL = "openai/gpt-oss-120b"
-    FALLBACK_MODEL = "qwen/qwen3.6-27b"
+    FALLBACK_MODEL = "qwen3.8-27b"
 
     def __init__(self):
         self._primary_llm = ChatGroq(
@@ -226,7 +226,7 @@ class MessageRouter:
                         SingleDecision(
                             action="CONTINUE_CURRENT",
                             confidence=0.0,
-                            reasoning="Both router models failed — defaulting to CONTINUE_CURRENT",
+                            reasoning="Both router models failed - defaulting to CONTINUE_CURRENT",
                         )
                     ]
                 )

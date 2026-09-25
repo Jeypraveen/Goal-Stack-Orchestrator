@@ -2,11 +2,11 @@
 API route definitions.
 
 Endpoints:
-    POST   /api/sessions           — Create a new conversation session
-    GET    /api/sessions/{id}      — Get session details
-    POST   /api/sessions/{id}/chat — Send a message (the main endpoint)
-    GET    /api/sessions/{id}/goals — Get current goal stack
-    GET    /api/sessions/{id}/messages — Get conversation history
+    POST   /api/sessions           - Create a new conversation session
+    GET    /api/sessions/{id}      - Get session details
+    POST   /api/sessions/{id}/chat - Send a message (the main endpoint)
+    GET    /api/sessions/{id}/goals - Get current goal stack
+    GET    /api/sessions/{id}/messages - Get conversation history
 """
 
 import logging
@@ -58,7 +58,7 @@ async def get_session(request: Request, session_id: UUID):
 
 
 # =========================================================================
-# Chat Endpoint — the main endpoint
+# Chat Endpoint - the main endpoint
 # =========================================================================
 
 

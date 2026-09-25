@@ -1,5 +1,5 @@
 """
-Status Agent — a deterministic, rule-based agent.
+Status Agent - a deterministic, rule-based agent.
 
 This agent checks the status of bookings without using an LLM.
 It proves that the goal-stack architecture supports hybrid
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class StatusAgent:
     """
     Deterministic rule-based agent for checking booking status.
-    No LLM involved — uses the GoalStackManager service layer.
+    No LLM involved - uses the GoalStackManager service layer.
     """
 
     async def process(
@@ -61,7 +61,7 @@ class StatusAgent:
                 response=response, slots_filled={}, slots_missing=[], is_complete=False
             )
 
-        # Status goals are single-turn — complete immediately on success
+        # Status goals are single-turn - complete immediately on success
         return AgentResponse(
             response=response, slots_filled={}, slots_missing=[], is_complete=True
         )

@@ -1,7 +1,7 @@
 """
 Goal-related Pydantic models.
 
-These models define the shape of goals on the stack — the central data structure
+These models define the shape of goals on the stack - the central data structure
 of the entire orchestrator. Used for API serialization, database read/write,
 and the frontend sidebar rendering.
 """

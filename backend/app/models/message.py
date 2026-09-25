@@ -44,7 +44,7 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    """Response to a chat request — includes the goal stack for sidebar rendering."""
+    """Response to a chat request - includes the goal stack for sidebar rendering."""
 
     response: str = Field(
         ...,

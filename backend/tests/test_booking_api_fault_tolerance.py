@@ -81,4 +81,4 @@ async def test_api_retry_exhausted_graceful_degradation(mock_goal):
 
         # Assert graceful degradation message
         assert "airline system is currently busy" in response.response
-        assert response.is_complete is True
+        assert response.is_complete is False

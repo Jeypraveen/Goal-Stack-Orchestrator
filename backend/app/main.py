@@ -31,6 +31,8 @@ async def lifespan(app: FastAPI):
     Shutdown: Close the connection gracefully.
     """
     # --- Startup ---
+    logger.info("Validating configuration...")
+    settings.validate_required()
     logger.info("Initializing database...")
     await init_db(settings.database_url)
     logger.info("[SUCCESS] Database initialized")
@@ -47,7 +49,7 @@ app = FastAPI(
     title="Jps.ai",
     description=(
         "A conversational AI backend that manages multiple concurrent user goals "
-        "as a persistent stack — supporting mid-conversation interruption, topic "
+        "as a persistent stack - supporting mid-conversation interruption, topic "
         "switching, and resumption without context loss."
     ),
     version="1.0.0",

@@ -1,7 +1,7 @@
 """
 Async database connection management for SQLite via aiosqlite.
 
-The database is managed by FastAPI's lifespan — created at startup, closed at shutdown.
+The database is managed by FastAPI's lifespan - created at startup, closed at shutdown.
 We use a single shared connection with WAL mode for concurrent read support.
 """
 

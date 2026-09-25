@@ -1,12 +1,12 @@
 """
-LangGraph Orchestrator — the main control flow graph.
+LangGraph Orchestrator - the main control flow graph.
 
 This graph processes every incoming user message through:
-    1. load_state — Fetch goal stack + recent messages from SQLite
-    2. route_message — Classify the message via Router LLM (Groq)
-    3. execute_agent — Update goal stack + dispatch to the correct agent
-    4. persist_state — Write all changes back to SQLite
-    5. format_response — Package response + goal stack for the API
+    1. load_state - Fetch goal stack + recent messages from SQLite
+    2. route_message - Classify the message via Router LLM (Groq)
+    3. execute_agent - Update goal stack + dispatch to the correct agent
+    4. persist_state - Write all changes back to SQLite
+    5. format_response - Package response + goal stack for the API
 
 Uses LangGraph's StateGraph for explicit, debuggable control flow
 rather than an opaque agent loop.
@@ -178,7 +178,7 @@ async def execute_agent(state: OrchestratorState) -> dict:
             elif single_decision.action == "CONTINUE_CURRENT":
                 goal = await gsm.get_active_goal(session_id)
                 if goal is None:
-                    # No active goal — treat as a new goal
+                    # No active goal - treat as a new goal
                     intent_type = single_decision.intent_type or "faq"
                     goal = await gsm.push_goal(session_id, intent_type)
                 active_goal = goal
@@ -197,7 +197,7 @@ async def execute_agent(state: OrchestratorState) -> dict:
                         )
                         active_goal = await gsm.get_active_goal(session_id)
                 else:
-                    # No target specified — try to resume the most recent paused goal
+                    # No target specified - try to resume the most recent paused goal
                     goal_stack = await gsm.get_stack(session_id)
                     paused = [g for g in goal_stack.goals if g.status == "paused"]
                     if paused:

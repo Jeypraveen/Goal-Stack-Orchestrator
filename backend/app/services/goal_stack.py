@@ -1,11 +1,11 @@
 """
-GoalStackManager — the most important service class in the orchestrator.
+GoalStackManager - the most important service class in the orchestrator.
 
 All goal-stack state transitions go through this class. It enforces the
 critical invariant: at most one goal per session has status = 'active'.
 
 Every mutation is committed to the SQLite database to ensure atomicity.
-The stack is fully persisted in SQLite — the system survives
+The stack is fully persisted in SQLite - the system survives
 a server restart without losing state.
 """
 
@@ -25,11 +25,11 @@ class GoalStackManager:
     It models conversation state as a stack of goals, not a flat chat log.
 
     Key operations:
-        push_goal   — Start a new goal (pauses the current active goal)
-        pop_goal    — Complete the top goal (resumes the paused goal below)
-        pause_goal  — Explicitly pause a goal
-        resume_goal — Resume a specific paused goal (pauses the current active)
-        abandon_goal — Abandon a goal (resumes the next paused goal)
+        push_goal   - Start a new goal (pauses the current active goal)
+        pop_goal    - Complete the top goal (resumes the paused goal below)
+        pause_goal  - Explicitly pause a goal
+        resume_goal - Resume a specific paused goal (pauses the current active)
+        abandon_goal - Abandon a goal (resumes the next paused goal)
     """
 
     def __init__(self, conn: aiosqlite.Connection):

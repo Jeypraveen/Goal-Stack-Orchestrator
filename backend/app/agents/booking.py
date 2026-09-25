@@ -1,8 +1,8 @@
 """
-Booking Agent — a slot-filling agent for travel booking.
+Booking Agent - a slot-filling agent for travel booking.
 
 Stateless: reads everything from the goal object (slots_filled, slots_missing)
-and writes back to it. This is what makes pause/resume work — when a paused
+and writes back to it. This is what makes pause/resume work - when a paused
 booking goal is resumed, the agent reads the same goal object and picks up
 exactly where it left off.
 
@@ -63,13 +63,13 @@ class ExtractedSlots(BaseModel):
 BOOKING_SYSTEM_PROMPT = """You are a friendly travel booking assistant. Your job is to help users book flights by collecting the required information step by step.
 
 ## Required Information (slots)
-1. **origin** — Where they're flying from (city or airport)
-2. **destination** — Where they're flying to (city or airport)
-3. **date** — When they want to travel (date)
+1. **origin** - Where they're flying from (city or airport)
+2. **destination** - Where they're flying to (city or airport)
+3. **date** - When they want to travel (date)
 
 ## Optional Information
-4. **passengers** — Number of passengers (default: 1)
-5. **travel_class** — Economy, business, or first (default: economy)
+4. **passengers** - Number of passengers (default: 1)
+5. **travel_class** - Economy, business, or first (default: economy)
 
 ## Your Behavior
 - Be conversational and friendly, but efficient
@@ -85,7 +85,7 @@ BOOKING_SYSTEM_PROMPT = """You are a friendly travel booking assistant. Your job
 
 ## Current State
 You will be given the current slots_filled and slots_missing for this booking goal.
-Continue from where the conversation left off — do NOT re-ask for information already collected.
+Continue from where the conversation left off - do NOT re-ask for information already collected.
 """
 
 
@@ -93,7 +93,7 @@ class BookingAgent:
     """
     Slot-filling agent for travel booking.
 
-    Stateless — reads from and writes to the goal object.
+    Stateless - reads from and writes to the goal object.
     Uses Gemini Flash for extraction and generation.
     """
 
@@ -139,7 +139,9 @@ class BookingAgent:
             if value is not None:
                 if isinstance(value, str):
                     value = self._sanitize_slot_value(value)
-                slots_filled[slot_name] = value
+                # Don't add empty strings (e.g. if sanitization stripped everything)
+                if value != "":
+                    slots_filled[slot_name] = value
 
         # 3. Validate slots and remove invalid ones
         invalid_messages = self._validate_slots(slots_filled)
@@ -200,9 +202,8 @@ class BookingAgent:
             response=response,
             slots_filled=slots_filled,
             slots_missing=slots_missing,
-            # If the API failed, we don't consider the goal complete yet (or we can complete it and gracefully fail)
-            # We'll keep it complete but the response explains the failure.
-            is_complete=is_complete,
+            # Do not complete the goal if the API failed, so the user can try again
+            is_complete=is_complete and not api_failed,
         )
 
     @staticmethod
