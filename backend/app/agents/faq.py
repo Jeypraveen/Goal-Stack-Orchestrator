@@ -70,7 +70,7 @@ class FAQAgent:
     def __init__(self):
         self._llm = ChatGoogleGenerativeAI(
             api_key=settings.google_api_key,
-            model=settings.agent_llm_model,
+            model="gemini-flash-latest",
             temperature=0.2,
         )
         self._knowledge_base = _load_knowledge_base()

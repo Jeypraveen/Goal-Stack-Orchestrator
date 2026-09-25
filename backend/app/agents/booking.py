@@ -36,11 +36,11 @@ class ExtractedSlots(BaseModel):
 
     origin: str | None = Field(
         default=None,
-        description="Departure city or airport (e.g., 'New York', 'JFK')",
+        description="Departure location (e.g., 'New York', 'JFK', 'India')",
     )
     destination: str | None = Field(
         default=None,
-        description="Arrival city or airport (e.g., 'London', 'LHR')",
+        description="Arrival location (e.g., 'London', 'LHR', 'India')",
     )
     date: str | None = Field(
         default=None,
@@ -106,7 +106,7 @@ class BookingAgent:
             self._llm = ChatGoogleGenerativeAI(
                 api_key=settings.google_api_key
                 or "dummy",  # Prevent crash on import if key missing
-                model=settings.agent_llm_model,
+                model="gemini-flash-latest",
                 temperature=0.3,
             )
         else:

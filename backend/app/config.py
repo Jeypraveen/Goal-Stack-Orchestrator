@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # --- Google AI Studio (Gemini Flash - Agent LLM) ---
     google_api_key: str = ""
-    agent_llm_model: str = "gemini-3.6-flash"
+    agent_llm_model: str = "gemini-flash-latest"
 
     # --- App ---
     environment: str = "development"
