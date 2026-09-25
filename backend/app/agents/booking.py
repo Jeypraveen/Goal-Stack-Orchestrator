@@ -352,7 +352,7 @@ The user just said: "{user_message}"
 
 CRITICAL INSTRUCTIONS:
 1. You MUST address any Validation Errors provided above.
-2. You MUST ask the user to provide the next missing piece: "{next_slot}". 
+2. You MUST ask the user to provide the next missing piece: "{next_slot}".
 3. DO NOT pretend the booking is complete. The system requires exactly what is missing.
 Keep it conversational and concise (2-3 sentences max)."""
 
