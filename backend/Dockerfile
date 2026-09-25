@@ -21,8 +21,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy project files
 COPY . .
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser \
+# Create data directory for SQLite and non-root user
+RUN mkdir -p /app/data \
+    && useradd -m -u 1000 appuser \
     && chown -R appuser:appuser /app
 
 # Switch to non-root user
